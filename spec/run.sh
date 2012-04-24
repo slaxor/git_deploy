@@ -48,12 +48,12 @@ chmod 755 hooks/update
 cd $TESTDIR/git_repo
 git co production
 
-RANDOM_CONTENT=$RANDOM
+RANDOM_CONTENT='This line should be deployed'
 echo $RANDOM_CONTENT >>testfile.txt
 git commit -am 'Add random content'
 git push
 
-grep -q $RANDOM_CONTENT $TESTDIR/deploy_target/git_repo.production/current/testfile.txt && error 'production should have been deployed but it wasnt'
+grep -q "$RANDOM_CONTENT" $TESTDIR/deploy_target/git_repo.production/current/testfile.txt && error 'production should have been deployed but it wasnt'
 
 # rm -rf $TESTDIR
 
