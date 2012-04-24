@@ -6,11 +6,7 @@ class Target
       mkdir -p #{CONFIG.target}
       set -x
       cd #{CONFIG.target}
-      git clone #{CONFIG.repo} current
-      cd #{CONFIG.target}/current
-      git checkout #{CONFIG.branch}
-      echo $PWD
-      ls -la
+      git clone #{CONFIG.repo} -b #{CONFIG.branch} current
       cd #{CONFIG.target}
       mkdir -p shared
       mkdir -p scripts
