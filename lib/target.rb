@@ -7,7 +7,7 @@ class Target
       set -x
       cd #{CONFIG.target}
       git clone #{CONFIG.repo} -b #{CONFIG.branch} current
-      cd #{CONFIG.target}
+      cd #{CONFIG.target}/current
       mkdir -p shared
       mkdir -p scripts
       echo "#!/bin/bash\\necho \\\$0\\n" > scripts/predeploy.sample
