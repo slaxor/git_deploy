@@ -76,7 +76,7 @@ function teardown() {
 
 function should_have_updated_content_from_production_on_the_target_dir() {
   cd $TESTDIR/git_repo
-  git co production
+  git checkout production
   RANDOM_CONTENT='This line should be deployed'
   echo $RANDOM_CONTENT >>testfile.txt
   git commit -am 'Add random content in production'
@@ -91,7 +91,7 @@ function should_have_updated_content_from_production_on_the_target_dir() {
 
 function should_not_have_updated_content_from_master_on_the_target_dir() {
   cd $TESTDIR/git_repo
-  git co master
+  git checkout master
   RANDOM_CONTENT='This line should not be deployed until its merged into production'
   git merge production
   echo $RANDOM_CONTENT >>testfile.txt
@@ -107,14 +107,14 @@ function should_not_have_updated_content_from_master_on_the_target_dir() {
 
 function should_deploy_if_master_is_merged_into_production() {
   cd $TESTDIR/git_repo
-  git co master
+  git checkout master
   RANDOM_CONTENT='This line should be deployed eventually'
   git pull origin production
   git push
   echo $RANDOM_CONTENT >>testfile.txt
   git commit -am 'Add random content in master to be merged'
   git push
-  git co production
+  git checkout production
   git pull origin master
   git push
   if $(grep -q "$RANDOM_CONTENT" $TESTDIR/deploy_target/git_repo.production/current/testfile.txt)
@@ -132,7 +132,7 @@ function should_just_add_deploy_command_to_post_update_and_remove_it_afterwards_
   chmod 755 $POST_UPDATE
   cp $POST_UPDATE $POST_UPDATE.orig
   cd $TESTDIR/git_repo
-  git co production
+  git checkout production
   RANDOM_CONTENT='should_just_add_deploy_command_to_post_update_and_remove_it_afterwards_it_the_file_exists'
   echo $RANDOM_CONTENT >>testfile.txt
   git commit -am 'Add random content'
