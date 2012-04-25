@@ -1,13 +1,12 @@
 class Target
   def self.setup
+    puts "\x1b[0m\x1b[33m"
     puts "Setting up your deployment target in #{CONFIG.target}"
     puts CONFIG.user ? " as user #{CONFIG.user}" : ''
     CONFIG.sudo %Q(
       mkdir -p #{CONFIG.target}
-      set -x
       cd #{CONFIG.target}
       git clone #{CONFIG.repo} -b #{CONFIG.branch} current
-      cd #{CONFIG.target}/current
       mkdir -p shared
       mkdir -p scripts
       echo "#!/bin/bash\\necho \\\$0\\n" > scripts/predeploy.sample
@@ -16,6 +15,7 @@ class Target
     )
     puts "The deploy will run #{CONFIG.prescript} before the update if it exists" if CONFIG.prescript?
     puts "The deploy will run #{CONFIG.postscript} after the update if it exists" if CONFIG.postscript?
+    puts "\x1b[0m"
   end
 
   def self.cold?
