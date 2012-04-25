@@ -2,15 +2,15 @@ class Deployment
   def self.run
     puts "\x1b[0m\x1b[34m"
     print "Starting deployment of #{CONFIG.branch} to #{CONFIG.target} ..."
-      CONFIG.sudo CONFIG.prescript if CONFIG.prescript?
-      CONFIG.sudo %Q(
+      CONFIG.remote_run CONFIG.prescript if CONFIG.prescript?
+      CONFIG.remote_run %Q(
         cd #{CONFIG.target}/current
         unset GIT_DIR
         git pull origin #{CONFIG.branch}
       )
-      CONFIG.sudo CONFIG.postscript if CONFIG.postscript?
+      CONFIG.remote_run CONFIG.postscript if CONFIG.postscript?
 
-      CONFIG.sudo %Q(
+      CONFIG.remote_run %Q(
         cd #{CONFIG.target}/current
         git tag #{CONFIG.tag}
         git push --tags

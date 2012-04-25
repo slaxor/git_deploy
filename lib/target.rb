@@ -3,7 +3,7 @@ class Target
     puts "\x1b[0m\x1b[33m"
     puts "Setting up your deployment target in #{CONFIG.target}"
     puts CONFIG.user ? " as user #{CONFIG.user}" : ''
-    CONFIG.sudo %Q(
+    CONFIG.remote_run %Q(
       mkdir -p #{CONFIG.target}
       cd #{CONFIG.target}
       git clone #{CONFIG.repo} -b #{CONFIG.branch} current

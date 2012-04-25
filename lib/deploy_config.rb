@@ -42,7 +42,7 @@ class DeployConfig
     postscript && File.exist?(postscript) && File.executable?(postscript)
   end
 
-  def sudo(cmds)
+  def remote_run(cmds)
     cmds.gsub!(/^\W*/, '').gsub!("\n", ' ; ').gsub!(/([<>|])/, "\\1")
     cmds = "sudo -u #{@user} #{cmds}"if @user
     puts "\nI will execute:\n#{cmds}\n"
