@@ -1,7 +1,12 @@
 #!/bin/bash
-set -ex
+set -e
+trap teardown EXIT
+
 BASEDIR=$(readlink -f $(dirname $0))
 TESTDIR=$BASEDIR/testdir.$$
+
+OK=0
+FAIL=1
 
 RESET='\x1b[0m'
 BOLD='\x1b[1m'
@@ -21,39 +26,107 @@ PURPLE='\x1b[0m\x1b[35m'
 CYAN='\x1b[0m\x1b[36m'
 WHITE='\x1b[0m\x1b[37m'
 
-function error() {
-  echo $1
-  exit 1
+function ok() {
+  echo -en $GREEN$BOLD* $RESET
 }
 
-mkdir $TESTDIR
-cd $TESTDIR
-tar xzf $BASEDIR/fixtures/testgit.tgz
-cd git_repo.git
-git config deploy.production.target $TESTDIR/deploy_target/git_repo.production
-# git config deploy.production.user testuser
-# git config deploy.production.prescript $TESTDIR/deploy_target/git_repo.production/scripts/predeploy
-# git config deploy.production.postscript $TESTDIR/deploy_target/git_repo.production/scripts/postdeploy
-# git config deploy.production.tag true
-cat >hooks/update <<__EOF__
-#!/bin/bash
-echo -e "$YELLOW"
-set -ex
-$(readlink -f $BASEDIR/..)/githooks/deploy.rb \$* \$PWD
-echo -e "$RESET"
-__EOF__
-chmod 755 hooks/update
+function failure() {
+  echo -e $RED$BOLD${1:-failed}$RESET
+  return 1
+}
 
-# testing git now
-cd $TESTDIR/git_repo
-git co production
+function it() {
+  if $($1 >> $TESTDIR/test.log 2>&1)
+  then
+    failure "$1 failed"
+  else
+    ok
+  fi
+}
 
-RANDOM_CONTENT='This line should be deployed'
-echo $RANDOM_CONTENT >>testfile.txt
-git commit -am 'Add random content'
-git push
+function setup() {
+  mkdir $TESTDIR
+  cd $TESTDIR
+  tar xzf $BASEDIR/fixtures/testgit.tgz
+  cd git_repo.git
+  git config deploy.production.target $TESTDIR/deploy_target/git_repo.production
+  # git config deploy.production.user testuser
+  # git config deploy.production.prescript $TESTDIR/deploy_target/git_repo.production/scripts/predeploy
+  # git config deploy.production.postscript $TESTDIR/deploy_target/git_repo.production/scripts/postdeploy
+  # git config deploy.production.tag true
+  cat >hooks/update <<-__EOF__
+		#!/bin/bash
+		echo -e "$YELLOW"
+		set -ex
+		$(readlink -f $BASEDIR/..)/githooks/update.rb \$* \$PWD
+		echo -e "$RESET"
+	__EOF__
+  chmod 755 hooks/update
+}
 
-grep -q "$RANDOM_CONTENT" $TESTDIR/deploy_target/git_repo.production/current/testfile.txt && error 'production should have been deployed but it wasnt'
+function teardown() {
+  if ! $(read -t2 -n1 -p "Press a key within 2 seconds to keep the testdir...")
+  then
+    echo
+    rm -rf $TESTDIR
+  else
+    echo "\nOk, keeping $TESTDIR for your inspection"
+  fi
+}
 
-# rm -rf $TESTDIR
+function should_have_updated_content_from_production_on_the_target_dir() {
+  cd $TESTDIR/git_repo
+  git co production
+  RANDOM_CONTENT='This line should be deployed'
+  echo $RANDOM_CONTENT >>testfile.txt
+  git commit -am 'Add random content in production'
+  git push
+  if $(grep -q "$RANDOM_CONTENT" $TESTDIR/deploy_target/git_repo.production/current/testfile.txt)
+  then
+    return $FAIL
+  else
+    return $OK
+  fi
+}
+
+function should_not_have_updated_content_from_master_on_the_target_dir() {
+  cd $TESTDIR/git_repo
+  git co master
+  RANDOM_CONTENT='This line should not be deployed'
+  echo $RANDOM_CONTENT >>testfile.txt
+  git commit -am 'Add random content in master'
+  git push
+  if $(grep -q "$RANDOM_CONTENT" $TESTDIR/deploy_target/git_repo.production/current/testfile.txt)
+  then
+    return $OK
+  else
+    return $FAIL
+  fi
+}
+
+function should_deploy_if_master_is_merged_into_production() {
+  cd $TESTDIR/git_repo
+  git co master
+  RANDOM_CONTENT='This line should be deployed eventually'
+  git pull origin production
+  git push
+  echo $RANDOM_CONTENT >>testfile.txt
+  git commit -am 'Add random content in master to be merged'
+  git push
+  git co production
+  git pull origin master
+  git push
+  if $(grep -q "$RANDOM_CONTENT" $TESTDIR/deploy_target/git_repo.production/current/testfile.txt)
+  then
+    return $FAIL
+  else
+    return $OK
+  fi
+}
+
+setup
+it should_have_updated_content_from_production_on_the_target_dir
+it should_not_have_updated_content_from_master_on_the_target_dir
+it should_deploy_if_master_is_merged_into_production
+echo
 
