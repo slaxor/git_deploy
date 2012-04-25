@@ -15,7 +15,7 @@ class Deployment
     %x(
       unset GIT_DIR
       cd #{CONFIG.repo}
-      git tag #{CONFIG.tag}
+      git tag #{CONFIG.tag} #{CONFIG.new}
     ) if CONFIG.tag?
 
     puts ' done'
