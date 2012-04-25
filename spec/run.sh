@@ -92,7 +92,8 @@ function should_have_updated_content_from_production_on_the_target_dir() {
 function should_not_have_updated_content_from_master_on_the_target_dir() {
   cd $TESTDIR/git_repo
   git co master
-  RANDOM_CONTENT='This line should not be deployed'
+  RANDOM_CONTENT='This line should not be deployed until its merged into production'
+  git merge production
   echo $RANDOM_CONTENT >>testfile.txt
   git commit -am 'Add random content in master'
   git push
@@ -124,9 +125,33 @@ function should_deploy_if_master_is_merged_into_production() {
   fi
 }
 
+function should_just_add_deploy_command_to_post_update_and_remove_it_afterwards_it_the_file_exists() {
+  POST_UPDATE=$TESTDIR/git_repo.git/hooks/post-update
+  POST_UPDATE_CONTENT="#!/bin/bash\nset -x\n"
+  echo -e  $POST_UPDATE_CONTENT > $POST_UPDATE
+  chmod 755 $POST_UPDATE
+  cp $POST_UPDATE $POST_UPDATE.orig
+  cd $TESTDIR/git_repo
+  git co production
+  RANDOM_CONTENT='should_just_add_deploy_command_to_post_update_and_remove_it_afterwards_it_the_file_exists'
+  echo $RANDOM_CONTENT >>testfile.txt
+  git commit -am 'Add random content'
+  git push
+  set -x
+
+  if $(diff -q $POST_UPDATE $POST_UPDATE.orig)
+  then
+    return $FAIL
+  else
+    rm -v $POST_UPDATE $POST_UPDATE.orig
+    return $OK
+  fi
+}
+
 setup
 it should_have_updated_content_from_production_on_the_target_dir
 it should_not_have_updated_content_from_master_on_the_target_dir
 it should_deploy_if_master_is_merged_into_production
+it should_just_add_deploy_command_to_post_update_and_remove_it_afterwards_it_the_file_exists
 echo
 
