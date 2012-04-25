@@ -54,7 +54,7 @@ class DeployConfig
   end
 
   def tag
-    "deploy_#{branch}" # + %x(git tag).split("\n")[-1].match(/deploy_#{branch}_(\d*)/).to_a[1].to_i + 1
+    "deploy_#{branch}_#{Time.now.strftime('%Y%m%d_%H%M%S')}"
   end
 end
 

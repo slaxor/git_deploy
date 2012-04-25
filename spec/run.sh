@@ -148,10 +148,31 @@ function should_just_add_deploy_command_to_post_update_and_remove_it_afterwards_
   fi
 }
 
+function should_set_a_tag_after_successful_deploy_if_configured() {
+  cd $TESTDIR/git_repo.git
+  git config deploy.production.tag true
+  cd $TESTDIR/git_repo
+  git checkout production
+  RANDOM_CONTENT='should_set_a_tag_after_successful_deploy_if_configured'
+  echo $RANDOM_CONTENT >>testfile.txt
+  git commit -am 'Add random content in production'
+  git push
+  git pull
+  if $(git tag|grep -q deploy_production)
+  then
+    return $FAIL
+  else
+    return $OK
+  fi
+}
+
+
+
 setup
 it should_have_updated_content_from_production_on_the_target_dir
 it should_not_have_updated_content_from_master_on_the_target_dir
 it should_deploy_if_master_is_merged_into_production
 it should_just_add_deploy_command_to_post_update_and_remove_it_afterwards_it_the_file_exists
+it should_set_a_tag_after_successful_deploy_if_configured
 echo
 
