@@ -7,6 +7,7 @@ class Deployment
     CONFIG.remote_run %Q(
       cd #{CONFIG.target}/current
       unset GIT_DIR
+      git reset --hard origin/#{CONFIG.branch}
       git pull origin #{CONFIG.branch}
     )
 
